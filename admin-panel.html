@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Sora', sans-serif;
+    background: #0f1624;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 660px;
+  }
+
+  .section-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #4a5a7a;
+    padding: 4px 6px 2px;
+  }
+
+  .card {
+    background: #1a2236;
+    border-radius: 18px;
+    padding: 18px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+
+  .card-header { display: flex; align-items: center; gap: 14px; }
+
+  .icon {
+    font-size: 1.4rem;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 10px; flex-shrink: 0;
+  }
+
+  .card-title { font-size: 1rem; font-weight: 700; color: #fff; line-height: 1.2; }
+  .card-sub   { font-size: 0.78rem; color: #8a9abf; margin-top: 2px; }
+
+  .input-row { display: flex; gap: 10px; align-items: center; }
+
+  input[type=text], input[type=number] {
+    flex: 1;
+    background: #111827;
+    border: none;
+    border-radius: 12px;
+    padding: 11px 14px;
+    color: #8a9abf;
+    font-family: 'Sora', sans-serif;
+    font-size: 0.82rem;
+    outline: none;
+    transition: background 0.2s;
+    min-width: 0;
+  }
+  input[type=text]:focus, input[type=number]:focus { background: #141f30; color: #c5d0e8; }
+  input::placeholder { color: #4a5a7a; }
+
+  .btn {
+    border: none; border-radius: 12px;
+    padding: 11px 20px;
+    font-family: 'Sora', sans-serif; font-size: 0.82rem; font-weight: 700;
+    cursor: pointer; white-space: nowrap;
+    transition: filter 0.15s, transform 0.1s;
+    flex-shrink: 0;
+  }
+  .btn:hover  { filter: brightness(1.15); }
+  .btn:active { transform: scale(0.96); }
+
+  .btn-ban    { background: #d94040; color: #fff; }
+  .btn-warn   { background: #e89120; color: #fff; }
+  .btn-tpa    { background: #6b5ce7; color: #fff; }
+  .btn-to     { background: #2196a8; color: #fff; }
+  .btn-reset  { background: #4a7cf7; color: #fff; }
+  .btn-kick   { background: #e05a9e; color: #fff; }
+  .btn-create { background: #22c55e; color: #fff; }
+  .btn-raid   { background: #f43f5e; color: #fff; }
+  .btn-stop   { background: #374151; color: #fff; }
+
+  .icon-ban   { background: rgba(217,64,64,0.15); }
+  .icon-warn  { background: rgba(232,145,32,0.15); }
+  .icon-tpa   { background: rgba(107,92,231,0.15); }
+  .icon-to    { background: rgba(33,150,168,0.15); }
+  .icon-reset { background: rgba(74,124,247,0.15); }
+  .icon-kick  { background: rgba(224,90,158,0.15); }
+  .icon-fond  { background: rgba(34,197,94,0.15); }
+  .icon-raid  { background: rgba(244,63,94,0.15); }
+
+  /* TOGGLE */
+  .toggle-row {
+    display: flex; align-items: center; gap: 10px;
+    background: #111827; border-radius: 12px; padding: 10px 14px;
+  }
+  .toggle-label { font-size: 0.82rem; color: #8a9abf; flex: 1; }
+  .toggle-label b { color: #c5d0e8; }
+  .offline-badge {
+    font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;
+    background: rgba(244,63,94,0.2); color: #f87171; display: none;
+  }
+  .offline-badge.active { display: inline; }
+  .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; inset: 0;
+    background: #2a3a55; border-radius: 24px; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle-slider::before {
+    content: ''; position: absolute;
+    width: 18px; height: 18px; left: 3px; top: 3px;
+    background: #fff; border-radius: 50%; transition: transform 0.2s;
+  }
+  .toggle input:checked + .toggle-slider { background: #f43f5e; }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+  /* ERROR TOAST */
+  .toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #d94040; color: #fff;
+    font-family: 'Sora', sans-serif; font-size: 0.82rem; font-weight: 600;
+    padding: 10px 20px; border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 999;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ACCOUNT LIST */
+  .account-list {
+    display: flex; flex-direction: column; gap: 6px;
+    max-height: 200px; overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: #2a3a55 transparent;
+  }
+  .account-list::-webkit-scrollbar { width: 4px; }
+  .account-list::-webkit-scrollbar-thumb { background: #2a3a55; border-radius: 4px; }
+
+  .account-entry {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #111827; border-radius: 10px; padding: 9px 13px;
+    animation: slideIn 0.2s ease;
+    transition: background 0.2s;
+  }
+  .account-entry.status-banned  { border-left: 3px solid #d94040; }
+  .account-entry.status-kicked  { border-left: 3px solid #e05a9e; }
+  .account-entry.status-warned  { border-left: 3px solid #e89120; }
+
+  .account-left { display: flex; align-items: center; gap: 8px; }
+  .account-id   { font-size: 0.85rem; color: #c5d0e8; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .account-time { font-size: 0.72rem; color: #4a5a7a; }
+
+  .status-tag {
+    font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 5px;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .tag-ban  { background: rgba(217,64,64,0.2);  color: #f07070; }
+  .tag-kick { background: rgba(224,90,158,0.2); color: #f080c0; }
+  .tag-warn { background: rgba(232,145,32,0.2); color: #f0a840; }
+
+  .accounts-empty { text-align: center; color: #4a5a7a; font-size: 0.82rem; padding: 12px 0; }
+
+  /* RAID */
+  .raid-controls { display: flex; flex-direction: column; gap: 10px; }
+  .raid-row { display: flex; gap: 10px; align-items: center; }
+  .raid-progress-wrap {
+    background: #111827; border-radius: 10px; overflow: hidden; height: 8px; display: none;
+  }
+  .raid-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #f43f5e, #fb7185);
+    width: 0%; transition: width 0.1s linear; border-radius: 10px;
+  }
+  .raid-status { font-size: 0.78rem; color: #8a9abf; display: none; }
+
+  /* LOGS */
+  .logs-card {
+    background: #131c2e; border-radius: 18px; padding: 18px 22px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  }
+  .logs-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+  }
+  .logs-title {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 1rem; font-weight: 700; color: #fff;
+  }
+  .logs-title .icon {
+    background: rgba(255,255,255,0.07); font-size: 1.1rem;
+    width: 34px; height: 34px; border-radius: 9px;
+  }
+  .clear-btn {
+    background: rgba(255,255,255,0.06); border: none; border-radius: 8px;
+    color: #8a9abf; font-family: 'Sora', sans-serif; font-size: 0.75rem;
+    padding: 6px 12px; cursor: pointer; transition: background 0.15s;
+  }
+  .clear-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+  .logs-list {
+    display: flex; flex-direction: column; gap: 8px;
+    max-height: 280px; overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: #2a3a55 transparent;
+  }
+  .logs-list::-webkit-scrollbar { width: 4px; }
+  .logs-list::-webkit-scrollbar-thumb { background: #2a3a55; border-radius: 4px; }
+
+  .log-entry {
+    display: flex; align-items: flex-start; gap: 10px;
+    background: #1a2236; border-radius: 11px; padding: 10px 14px;
+    animation: slideIn 0.25s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .log-badge {
+    font-size: 0.68rem; font-weight: 700; padding: 3px 9px; border-radius: 6px;
+    flex-shrink: 0; margin-top: 1px; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .badge-ban    { background: rgba(217,64,64,0.2);  color: #f07070; }
+  .badge-warn   { background: rgba(232,145,32,0.2); color: #f0a840; }
+  .badge-tpa    { background: rgba(107,92,231,0.2); color: #a090ff; }
+  .badge-to     { background: rgba(33,150,168,0.2); color: #50c8d8; }
+  .badge-reset  { background: rgba(74,124,247,0.2); color: #7aaaff; }
+  .badge-kick   { background: rgba(224,90,158,0.2); color: #f080c0; }
+  .badge-compte { background: rgba(34,197,94,0.2);  color: #4ade80; }
+  .badge-raid   { background: rgba(244,63,94,0.2);  color: #fb7185; }
+  .badge-erreur { background: rgba(239,68,68,0.15); color: #fca5a5; }
+
+  .log-text { font-size: 0.82rem; color: #c5d0e8; line-height: 1.5; flex: 1; }
+  .log-sub  { color: #8a9abf; font-size: 0.75rem; }
+  .log-time { font-size: 0.72rem; color: #4a5a7a; flex-shrink: 0; margin-top: 2px; }
+  .logs-empty { text-align: center; color: #4a5a7a; font-size: 0.82rem; padding: 20px 0; }
+
+  .shake { animation: shake 0.4s ease; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25%      { transform: translateX(-5px); }
+    75%      { transform: translateX(5px); }
+  }
+</style>
+</head>
+<body>
+<div class="panel">
+
+  <!-- OFFLINE TOGGLE -->
+  <div class="card" style="padding:14px 22px;">
+    <div class="toggle-row">
+      <span style="font-size:1.1rem;">🔌</span>
+      <span class="toggle-label">Mode <b>Sanction hors ligne</b> — Sanctionner sans que le joueur soit présent</span>
+      <span class="offline-badge" id="offline-badge">ACTIF</span>
+      <label class="toggle">
+        <input type="checkbox" id="offline-toggle" onchange="toggleOffline(this)">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <!-- SANCTIONS -->
+  <div class="section-label">⚔️ Sanctions</div>
+
+  <!-- BAN -->
+  <div class="card">
+    <div class="card-header">
+      <div class="icon icon-ban">🔨</div>
+      <div><div class="card-title">Ban</div><div class="card-sub">Bannir définitivement un joueur du serveur</div></div>
+    </div>
+    <div class="input-row">
+      <input id="ban-id" type="text" placeholder="ID joueur (ex: 7007)...">
+      <input id="ban-reason" type="text" placeholder="Raison..." style="max-width:130px">
+      <button class="btn btn-ban" onclick="doAction('ban')">Ban</button>
+    </div>
+  </div>
+
+  <!-- WARN -->
+  <div class="card">
+    <div class="card-header">
+      <div class="icon icon-warn">⚠️</div>
+      <div><div class="card-title">Warn</div><div class="card-sub">Avertir un joueur avec un message</div></div>
+    </div>
+    <div class="input-row">
+      <input id="warn-id" type="text" placeholder="ID joueur (ex: 7007)...">
+      <input id="warn-reason" type="text" placeholder="Message..." style="max-width:130px">
+      <button class="btn btn-warn" onclick="doAction('warn')">Warn</button>
+    </div>
+  </div>
+
+  <!-- KICK -->
+  <div class="card">
+    <div class="card-header">
+      <div class="icon icon-kick">👢</div>
+      <div><div class="card-title">Kick</div><div class="card-sub">Expulser temporairement un joueur</div></div>
+    </div>
+    <div class="input-row">
+      <input id="kick-id" type="text" placeholder="ID joueur (ex: 7007)...">
+      <input id="kick-reason" type="text" placeholder="Raison..." style="max-width:130px">
+      <button class="btn btn-kick" onclick="doAction('kick')">Kick</button>
+    </div>
+  </div>
+
+  <!-- TELEPORTATION -->
+  <div class="section-label">🧭 Téléportation</div>
+
+  <!-- TPA -->
+  <div class="card">
+    <div class="card-header">
+      <div class="icon icon-tpa">📡</div>
+      <div><div class="card-title">TPA</div><div class="card-sub">Demander une téléportation vers un joueur</div></div>
+    </div>
+    <div class="input-row">
+      <input id="tpa-id" type="text" placeholder="ID joueur cible...">
+      <button class="btn btn-tpa" onclick="doAction('tpa')">TPA</button>
+    </div>
+  </div>
+
+  <!-- TO -->
+  <div class="card">
+    <div class="card-header">
+      <div class="icon icon-to">🧭</div>
+      <div><div class="card-title">To</div><div class="card-sub">Téléporter un joueur vers un autre</div></div>
+    </div>
+    <div class="input-row">
+      <input id="to-id" type="text" placeholder="ID joueur à téléporter...">
+      <input id="to-dest" type="text" placeholder="ID destination..." style="max-width:130px">
+      <button class="btn btn-to" onclick="doAction('to')">To</button>
+    </div>
+  </div>
+
+  <!-- RESET -->
+  <div class="card">
+    <div class="card-header">
+      <div class="icon icon-reset">🔄</div>
+      <div><div class="card-title">Reset</div><div class="card-sub">Réinitialiser les données d'un joueur</div></div>
+    </div>
+    <div class="input-row">
+      <input id="reset-id" type="text" placeholder="ID joueur à réinitialiser...">
+      <button class="btn btn-reset" onclick="doAction('reset')">Reset</button>
+    </div>
+  </div>
+
+  <!-- FONDATION -->
+  <div class="section-label">🏗️ Fondation</div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="icon icon-fond">🏗️</div>
+      <div><div class="card-title">Fondation</div><div class="card-sub">Créer un compte joueur avec un ID numérique</div></div>
+    </div>
+    <div class="input-row">
+      <input id="fond-id" type="text" placeholder="ID numérique (ex: 7007)...">
+      <button class="btn btn-create" onclick="createAccount()">Créer</button>
+    </div>
+    <div class="account-list" id="account-list">
+      <div class="accounts-empty" id="accounts-empty">Aucun compte créé.</div>
+    </div>
+  </div>
+
+  <!-- RAID -->
+  <div class="section-label">💥 Raid</div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="icon icon-raid">💥</div>
+      <div>
+        <div class="card-title">Raid — Création en masse</div>
+        <div class="card-sub">Génère automatiquement X comptes avec des IDs numériques uniques</div>
+      </div>
+    </div>
+    <div class="raid-controls">
+      <div class="raid-row">
+        <input id="raid-start" type="number" placeholder="ID début (ex: 1000)" style="max-width:150px">
+        <input id="raid-count" type="number" min="1" max="500" placeholder="Quantité (ex: 100)" style="max-width:150px">
+        <button class="btn btn-raid" id="raid-btn" onclick="startRaid()">Lancer</button>
+        <button class="btn btn-stop" id="stop-btn" onclick="stopRaid()" style="display:none;">Stop</button>
+      </div>
+      <div class="raid-progress-wrap" id="raid-progress-wrap">
+        <div class="raid-progress-bar" id="raid-progress-bar"></div>
+      </div>
+      <div class="raid-status" id="raid-status"></div>
+    </div>
+  </div>
+
+  <!-- LOGS -->
+  <div class="logs-card">
+    <div class="logs-header">
+      <div class="logs-title">
+        <div class="icon">📋</div>
+        Logs
+      </div>
+      <button class="clear-btn" onclick="clearLogs()">Effacer tout</button>
+    </div>
+    <div class="logs-list" id="logs-list">
+      <div class="logs-empty" id="logs-empty">Aucune action effectuée.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  /* ── STATE ── */
+  const accounts = {}; // { id: { id, time, status: null|'ban'|'kick'|'warn' } }
+  let raidRunning = false;
+  let raidInterval = null;
+
+  /* ── OFFLINE ── */
+  function toggleOffline(cb) {
+    document.getElementById('offline-badge').classList.toggle('active', cb.checked);
+  }
+  function isOffline() { return document.getElementById('offline-toggle').checked; }
+
+  /* ── TOAST ── */
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  /* ── TIME ── */
+  function getTime() {
+    return new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  }
+
+  /* ── ERROR FLASH ── */
+  function flashError(el) {
+    el.style.outline = '2px solid #d94040';
+    el.classList.add('shake');
+    el.focus();
+    setTimeout(() => { el.style.outline = ''; el.classList.remove('shake'); }, 600);
+  }
+
+  /* ── CHECK IF ACCOUNT EXISTS ── */
+  function accountExists(id) {
+    return accounts.hasOwnProperty(String(id).trim());
+  }
+
+  /* ── ACTIONS ── */
+  function doAction(action) {
+    const idEl     = document.getElementById(`${action}-id`);
+    const reasonEl = document.getElementById(`${action}-reason`);
+    const destEl   = document.getElementById(`${action}-dest`);
+
+    const id     = idEl     ? idEl.value.trim()     : '';
+    const reason = reasonEl ? reasonEl.value.trim() : '';
+    const dest   = destEl   ? destEl.value.trim()   : '';
+
+    if (!id) { flashError(idEl); return; }
+
+    const sanctionActions = ['ban', 'warn', 'kick'];
+
+    // Vérification si compte existe pour les sanctions
+    if (sanctionActions.includes(action)) {
+      if (!accountExists(id) && !isOffline()) {
+        showToast(`❌ Erreur — Utilisateur ${id} non présent`);
+        addLog('erreur', `Utilisateur <b>${id}</b> introuvable`, 'Activez "Sanction hors ligne" pour sanctionner quand même');
+        flashError(idEl);
+        return;
+      }
+    }
+
+    // Pour téléportation / reset, vérifier aussi
+    if (['tpa', 'to', 'reset'].includes(action)) {
+      if (!accountExists(id)) {
+        showToast(`❌ Erreur — Utilisateur ${id} non présent`);
+        addLog('erreur', `Utilisateur <b>${id}</b> introuvable`);
+        flashError(idEl);
+        return;
+      }
+    }
+
+    let main = '', sub = '';
+
+    switch (action) {
+      case 'ban':
+        main = `<b>${id}</b> a été banni`;
+        sub  = reason;
+        if (accounts[id]) { accounts[id].status = 'ban'; renderAccounts(); }
+        break;
+      case 'warn':
+        main = `<b>${id}</b> a reçu un avertissement`;
+        sub  = reason;
+        if (accounts[id]) { accounts[id].status = 'warn'; renderAccounts(); }
+        break;
+      case 'kick':
+        main = `<b>${id}</b> a été expulsé`;
+        sub  = reason;
+        if (accounts[id]) { accounts[id].status = 'kick'; renderAccounts(); }
+        break;
+      case 'tpa':   main = `Demande TPA envoyée vers <b>${id}</b>`; break;
+      case 'to':    main = `<b>${id}</b> téléporté vers <b>${dest||'?'}</b>`; break;
+      case 'reset':
+        main = `Données de <b>${id}</b> réinitialisées`;
+        if (accounts[id]) { accounts[id].status = null; renderAccounts(); }
+        break;
+    }
+
+    // Tag hors-ligne si applicable
+    const offTag = (isOffline() && sanctionActions.includes(action) && !accountExists(id))
+      ? ' <span style="font-size:0.7rem;background:rgba(244,63,94,0.15);color:#fb7185;border-radius:5px;padding:1px 6px;margin-left:4px;">hors ligne</span>' : '';
+
+    addLog(action, main + offTag, sub);
+
+    if (idEl)     idEl.value     = '';
+    if (reasonEl) reasonEl.value = '';
+    if (destEl)   destEl.value   = '';
+  }
+
+  /* ── FONDATION ── */
+  function createAccount() {
+    const el = document.getElementById('fond-id');
+    const id = el.value.trim();
+    if (!id) { flashError(el); return; }
+    if (accounts[id]) {
+      showToast(`⚠️ L'ID ${id} existe déjà`);
+      return;
+    }
+    accounts[id] = { id, time: getTime(), status: null };
+    el.value = '';
+    renderAccounts();
+    addLog('compte', `Compte <b>${id}</b> créé`);
+  }
+
+  function renderAccounts() {
+    const list  = document.getElementById('account-list');
+    const empty = document.getElementById('accounts-empty');
+    const keys  = Object.keys(accounts);
+
+    if (keys.length === 0) {
+      list.innerHTML = '<div class="accounts-empty" id="accounts-empty">Aucun compte créé.</div>';
+      return;
+    }
+    list.innerHTML = '';
+
+    keys.slice().reverse().forEach(k => {
+      const a   = accounts[k];
+      const div = document.createElement('div');
+      div.className = `account-entry${a.status ? ' status-' + a.status + 'ned' : ''}`;
+      if (a.status === 'ban')  div.classList.add('status-banned');
+      if (a.status === 'kick') div.classList.add('status-kicked');
+      if (a.status === 'warn') div.classList.add('status-warned');
+
+      let tagHtml = '';
+      if (a.status === 'ban')  tagHtml = '<span class="status-tag tag-ban">Banni</span>';
+      if (a.status === 'kick') tagHtml = '<span class="status-tag tag-kick">Expulsé</span>';
+      if (a.status === 'warn') tagHtml = '<span class="status-tag tag-warn">Averti</span>';
+
+      div.innerHTML = `
+        <div class="account-left">
+          <span class="account-id">🆔 ${a.id}</span>
+          ${tagHtml}
+        </div>
+        <span class="account-time">${a.time}</span>`;
+      list.appendChild(div);
+    });
+  }
+
+  /* ── RAID ── */
+  function startRaid() {
+    const startEl = document.getElementById('raid-start');
+    const countEl = document.getElementById('raid-count');
+    const startId = parseInt(startEl.value) || 1000;
+    const total   = parseInt(countEl.value) || 0;
+
+    if (total < 1) { flashError(countEl); return; }
+    if (total > 500) { countEl.value = 500; return; }
+
+    raidRunning = true;
+    document.getElementById('raid-btn').style.display  = 'none';
+    document.getElementById('stop-btn').style.display  = '';
+    document.getElementById('raid-progress-wrap').style.display = '';
+    document.getElementById('raid-status').style.display = '';
+
+    let created = 0;
+    let currentId = startId;
+
+    addLog('raid', `Raid lancé : <b>${total}</b> comptes à partir de l'ID <b>${startId}</b>`);
+
+    raidInterval = setInterval(() => {
+      if (!raidRunning || created >= total) {
+        clearInterval(raidInterval);
+        finishRaid(created, total);
+        return;
+      }
+
+      const batch = Math.min(5, total - created);
+      for (let i = 0; i < batch; i++) {
+        let uid = String(currentId);
+        // Eviter les doublons
+        while (accounts[uid]) { currentId++; uid = String(currentId); }
+        accounts[uid] = { id: uid, time: getTime(), status: null };
+        currentId++;
+        created++;
+      }
+
+      const pct = Math.round((created / total) * 100);
+      document.getElementById('raid-progress-bar').style.width = pct + '%';
+      document.getElementById('raid-status').textContent = `Création en cours… ${created} / ${total} comptes`;
+      renderAccounts();
+
+    }, 80);
+  }
+
+  function stopRaid() {
+    raidRunning = false;
+    clearInterval(raidInterval);
+    document.getElementById('raid-status').textContent = 'Raid stoppé manuellement.';
+    addLog('raid', 'Raid <b>stoppé</b> manuellement');
+    setTimeout(resetRaidUI, 1500);
+  }
+
+  function finishRaid(created) {
+    raidRunning = false;
+    document.getElementById('raid-status').textContent = `✅ ${created} comptes créés avec succès !`;
+    addLog('raid', `Raid terminé — <b>${created}</b> comptes créés`);
+    setTimeout(resetRaidUI, 2500);
+  }
+
+  function resetRaidUI() {
+    document.getElementById('raid-btn').style.display  = '';
+    document.getElementById('stop-btn').style.display  = 'none';
+    document.getElementById('raid-progress-wrap').style.display = 'none';
+    document.getElementById('raid-progress-bar').style.width = '0%';
+  }
+
+  /* ── LOGS ── */
+  function addLog(action, mainText, subText) {
+    const list  = document.getElementById('logs-list');
+    const empty = document.getElementById('logs-empty');
+    if (empty) empty.remove();
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.innerHTML = `
+      <span class="log-badge badge-${action}">${action}</span>
+      <span class="log-text">${mainText}${subText ? ' <span class="log-sub">— ' + subText + '</span>' : ''}</span>
+      <span class="log-time">${getTime()}</span>`;
+    list.insertBefore(entry, list.firstChild);
+  }
+
+  function clearLogs() {
+    document.getElementById('logs-list').innerHTML =
+      '<div class="logs-empty" id="logs-empty">Aucune action effectuée.</div>';
+  }
+
+  /* ── ENTER KEY ── */
+  document.querySelectorAll('input').forEach(input => {
+    input.addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      const card = input.closest('.card');
+      if (card) { const btn = card.querySelector('.btn:not(#stop-btn)'); if (btn) btn.click(); }
+    });
+  });
+</script>
+</body>
+</html>
